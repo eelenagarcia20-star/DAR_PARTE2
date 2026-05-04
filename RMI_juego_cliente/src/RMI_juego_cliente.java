@@ -63,8 +63,11 @@ public class RMI_juego_cliente {
 
     private void iniciarPartida() {
         try {
-            String tablero = stub.iniciarJuego(idCliente);
-            dibujarTablero(tablero);
+            stub.iniciarJuego(idCliente);
+
+            String estado = stub.obtenerEstado(idCliente);
+            procesarEstado(estado);
+
             lblEstado.setText("Tu turno: juega con X");
         } catch (Exception e) {
             lblEstado.setText("Error al iniciar partida.");
@@ -81,31 +84,8 @@ public class RMI_juego_cliente {
                 return;
             }
 
-            if (respuesta.startsWith("RESULT:")) {
-                String[] partes = respuesta.split("\\|");
-                String resultado = partes[0].split(":")[1];
-                String tablero = partes[1];
-
-                dibujarTablero(tablero);
-
-                if (resultado.equals("X")) {
-                    lblEstado.setText("Has ganado.");
-                    JOptionPane.showMessageDialog(frame, "Has ganado.");
-                } else if (resultado.equals("O")) {
-                    lblEstado.setText("Has perdido.");
-                    JOptionPane.showMessageDialog(frame, "Has perdido.");
-                } else {
-                    lblEstado.setText("Empate.");
-                    JOptionPane.showMessageDialog(frame, "Empate.");
-                }
-
-                bloquearBotones();
-
-            } else if (respuesta.startsWith("STATE:")) {
-                String tablero = respuesta.split(":")[1];
-                dibujarTablero(tablero);
-                lblEstado.setText("Tu turno: juega con X");
-            }
+            String estado = stub.obtenerEstado(idCliente);
+            procesarEstado(estado);
 
         } catch (Exception e) {
             lblEstado.setText("Error de comunicación.");
@@ -135,7 +115,38 @@ public class RMI_juego_cliente {
             boton.setEnabled(false);
         }
     }
+    private void procesarEstado(String respuesta) {
+        if (respuesta.startsWith("ERROR")) {
+            lblEstado.setText(respuesta);
+            return;
+        }
 
+        if (respuesta.startsWith("RESULT:")) {
+            String[] partes = respuesta.split("\\|");
+            String resultado = partes[0].split(":")[1];
+            String tablero = partes[1];
+
+            dibujarTablero(tablero);
+
+            if (resultado.equals("X")) {
+                lblEstado.setText("Has ganado.");
+                JOptionPane.showMessageDialog(frame, "Has ganado.");
+            } else if (resultado.equals("O")) {
+                lblEstado.setText("Has perdido.");
+                JOptionPane.showMessageDialog(frame, "Has perdido.");
+            } else {
+                lblEstado.setText("Empate.");
+                JOptionPane.showMessageDialog(frame, "Empate.");
+            }
+
+            bloquearBotones();
+
+        } else if (respuesta.startsWith("STATE:")) {
+            String tablero = respuesta.split(":")[1];
+            dibujarTablero(tablero);
+            lblEstado.setText("Tu turno: juega con X");
+        }
+    }
     public static void main(String[] args) {
         new RMI_juego_cliente();
     }

@@ -49,14 +49,11 @@ public class JuegoImplement extends UnicastRemoteObject implements JuegoInterfaz
             resultado = p.comprobarEstado();
         }
 
-        String estadoStr = String.join(",", p.tablero);
-
         if (resultado != null) {
             p.juegoActivo = false;
-            return "RESULT:" + resultado + "|" + estadoStr;
         }
 
-        return "STATE:" + estadoStr;
+        return "OK:Movimiento procesado";
     }
 
     @Override
@@ -67,9 +64,18 @@ public class JuegoImplement extends UnicastRemoteObject implements JuegoInterfaz
             return "ERROR:No hay partida iniciada";
         }
 
-        return "STATE:" + String.join(",", p.tablero);
-    }
+        String estadoStr = String.join(",", p.tablero);
+        String resultado = p.comprobarEstado();
 
+        if (resultado != null || !p.juegoActivo) {
+            if (resultado == null) {
+                resultado = "EMPATE";
+            }
+            return "RESULT:" + resultado + "|" + estadoStr;
+        }
+
+        return "STATE:" + estadoStr;
+    }
     private static class Partida {
 
         String[] tablero = new String[9];
