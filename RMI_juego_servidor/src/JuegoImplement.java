@@ -14,7 +14,9 @@ public class JuegoImplement extends UnicastRemoteObject implements JuegoInterfaz
     public synchronized String iniciarJuego(String idCliente) throws RemoteException {
         Partida p = new Partida();
         partidas.put(idCliente, p);
+
         System.out.println("Partida iniciada para cliente: " + idCliente);
+
         return String.join(",", p.tablero);
     }
 
@@ -26,30 +28,50 @@ public class JuegoImplement extends UnicastRemoteObject implements JuegoInterfaz
             return "ERROR:No hay partida iniciada";
         }
 
-        if (pos < 0 || pos > 8 || !p.juegoActivo || !p.tablero[pos].equals("_")) {
-            return "ERROR:Movimiento no valido";
+        if (!p.juegoActivo) {
+            return "ERROR:La partida ya ha finalizado";
+        }
+
+        if (pos < 0 || pos > 8) {
+            return "ERROR:Movimiento fuera de rango";
+        }
+
+        if (!p.tablero[pos].equals("_")) {
+            return "ERROR:Casilla ocupada";
         }
 
         p.tablero[pos] = "X";
 
-        String res = p.comprobarEstado();
+        String resultado = p.comprobarEstado();
 
-        if (res == null) {
+        if (resultado == null) {
             p.movimientoIA();
-            res = p.comprobarEstado();
+            resultado = p.comprobarEstado();
         }
 
         String estadoStr = String.join(",", p.tablero);
 
-        if (res != null) {
+        if (resultado != null) {
             p.juegoActivo = false;
-            return "RESULT:" + res + "|" + estadoStr;
+            return "RESULT:" + resultado + "|" + estadoStr;
         }
 
         return "STATE:" + estadoStr;
     }
 
+    @Override
+    public synchronized String obtenerEstado(String idCliente) throws RemoteException {
+        Partida p = partidas.get(idCliente);
+
+        if (p == null) {
+            return "ERROR:No hay partida iniciada";
+        }
+
+        return "STATE:" + String.join(",", p.tablero);
+    }
+
     private static class Partida {
+
         String[] tablero = new String[9];
         boolean juegoActivo = true;
 
@@ -67,21 +89,22 @@ public class JuegoImplement extends UnicastRemoteObject implements JuegoInterfaz
             }
 
             if (!libres.isEmpty()) {
-                tablero[libres.get(new Random().nextInt(libres.size()))] = "O";
+                int posicion = libres.get(new Random().nextInt(libres.size()));
+                tablero[posicion] = "O";
             }
         }
 
         String comprobarEstado() {
             int[][] combos = {
-                {0,1,2}, {3,4,5}, {6,7,8},
-                {0,3,6}, {1,4,7}, {2,5,8},
-                {0,4,8}, {2,4,6}
+                {0, 1, 2}, {3, 4, 5}, {6, 7, 8},
+                {0, 3, 6}, {1, 4, 7}, {2, 5, 8},
+                {0, 4, 8}, {2, 4, 6}
             };
 
             for (int[] c : combos) {
-                if (!tablero[c[0]].equals("_") &&
-                    tablero[c[0]].equals(tablero[c[1]]) &&
-                    tablero[c[1]].equals(tablero[c[2]])) {
+                if (!tablero[c[0]].equals("_")
+                        && tablero[c[0]].equals(tablero[c[1]])
+                        && tablero[c[1]].equals(tablero[c[2]])) {
                     return tablero[c[0]];
                 }
             }
