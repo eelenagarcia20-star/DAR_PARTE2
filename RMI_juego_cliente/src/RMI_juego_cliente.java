@@ -1,11 +1,14 @@
 import java.awt.*;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.util.UUID;
 import javax.swing.*;
 
 public class RMI_juego_cliente {
 
     private JuegoInterfaz stub;
+    private String idCliente = UUID.randomUUID().toString();
+
     private JFrame frame;
     private JButton[] botones = new JButton[9];
     private JLabel lblEstado;
@@ -60,20 +63,21 @@ public class RMI_juego_cliente {
 
     private void iniciarPartida() {
         try {
-            String tablero = stub.iniciarJuego();
+            String tablero = stub.iniciarJuego(idCliente);
             dibujarTablero(tablero);
             lblEstado.setText("Tu turno: juega con X");
         } catch (Exception e) {
+            lblEstado.setText("Error al iniciar partida.");
             e.printStackTrace();
         }
     }
 
     private void jugar(int pos) {
         try {
-            String respuesta = stub.realizarMovimiento(pos);
+            String respuesta = stub.realizarMovimiento(idCliente, pos);
 
-            if (respuesta.equals("ERROR")) {
-                lblEstado.setText("Movimiento no válido.");
+            if (respuesta.startsWith("ERROR")) {
+                lblEstado.setText(respuesta);
                 return;
             }
 
@@ -104,6 +108,7 @@ public class RMI_juego_cliente {
             }
 
         } catch (Exception e) {
+            lblEstado.setText("Error de comunicación.");
             e.printStackTrace();
         }
     }

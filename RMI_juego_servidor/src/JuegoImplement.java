@@ -4,74 +4,93 @@ import java.util.*;
 
 public class JuegoImplement extends UnicastRemoteObject implements JuegoInterfaz {
 
-    private String[] tablero = new String[9];
-    private boolean juegoActivo = false;
+    private Map<String, Partida> partidas = new HashMap<>();
 
     public JuegoImplement() throws RemoteException {
         super();
-        Arrays.fill(tablero, "_");
     }
 
     @Override
-    public synchronized String iniciarJuego() throws RemoteException {
-        Arrays.fill(tablero, "_");
-        juegoActivo = true;
-        return String.join(",", tablero);
+    public synchronized String iniciarJuego(String idCliente) throws RemoteException {
+        Partida p = new Partida();
+        partidas.put(idCliente, p);
+        System.out.println("Partida iniciada para cliente: " + idCliente);
+        return String.join(",", p.tablero);
     }
 
     @Override
-    public synchronized String realizarMovimiento(int pos) throws RemoteException {
-        if (pos < 0 || pos > 8 || !juegoActivo || !tablero[pos].equals("_")) {
-            return "ERROR";
+    public synchronized String realizarMovimiento(String idCliente, int pos) throws RemoteException {
+        Partida p = partidas.get(idCliente);
+
+        if (p == null) {
+            return "ERROR:No hay partida iniciada";
         }
 
-        tablero[pos] = "X";
+        if (pos < 0 || pos > 8 || !p.juegoActivo || !p.tablero[pos].equals("_")) {
+            return "ERROR:Movimiento no valido";
+        }
 
-        String res = comprobarEstado();
+        p.tablero[pos] = "X";
+
+        String res = p.comprobarEstado();
 
         if (res == null) {
-            movimientoIA();
-            res = comprobarEstado();
+            p.movimientoIA();
+            res = p.comprobarEstado();
         }
 
-        String estadoStr = String.join(",", tablero);
+        String estadoStr = String.join(",", p.tablero);
 
         if (res != null) {
-            juegoActivo = false;
+            p.juegoActivo = false;
             return "RESULT:" + res + "|" + estadoStr;
         }
 
         return "STATE:" + estadoStr;
     }
 
-    private void movimientoIA() {
-        List<Integer> libres = new ArrayList<>();
-        for (int i = 0; i < 9; i++) {
-            if (tablero[i].equals("_")) libres.add(i);
+    private static class Partida {
+        String[] tablero = new String[9];
+        boolean juegoActivo = true;
+
+        Partida() {
+            Arrays.fill(tablero, "_");
         }
 
-        if (!libres.isEmpty()) {
-            tablero[libres.get(new Random().nextInt(libres.size()))] = "O";
-        }
-    }
+        void movimientoIA() {
+            List<Integer> libres = new ArrayList<>();
 
-    private String comprobarEstado() {
-        int[][] combos = {
-            {0,1,2},{3,4,5},{6,7,8},
-            {0,3,6},{1,4,7},{2,5,8},
-            {0,4,8},{2,4,6}
-        };
+            for (int i = 0; i < 9; i++) {
+                if (tablero[i].equals("_")) {
+                    libres.add(i);
+                }
+            }
 
-        for (int[] c : combos) {
-            if (!tablero[c[0]].equals("_") &&
-                tablero[c[0]].equals(tablero[c[1]]) &&
-                tablero[c[1]].equals(tablero[c[2]])) {
-                return tablero[c[0]];
+            if (!libres.isEmpty()) {
+                tablero[libres.get(new Random().nextInt(libres.size()))] = "O";
             }
         }
 
-        if (!Arrays.asList(tablero).contains("_")) return "EMPATE";
+        String comprobarEstado() {
+            int[][] combos = {
+                {0,1,2}, {3,4,5}, {6,7,8},
+                {0,3,6}, {1,4,7}, {2,5,8},
+                {0,4,8}, {2,4,6}
+            };
 
-        return null;
+            for (int[] c : combos) {
+                if (!tablero[c[0]].equals("_") &&
+                    tablero[c[0]].equals(tablero[c[1]]) &&
+                    tablero[c[1]].equals(tablero[c[2]])) {
+                    return tablero[c[0]];
+                }
+            }
+
+            if (!Arrays.asList(tablero).contains("_")) {
+                return "EMPATE";
+            }
+
+            return null;
+        }
     }
 }
