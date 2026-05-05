@@ -5,6 +5,8 @@ public class RMI_juego_servidor {
 
     public static void main(String[] args) {
         try {
+            System.setProperty("java.rmi.server.hostname", "192.168.50.10");
+            
             JuegoImplement obj = new JuegoImplement();
 
             Registry registry = LocateRegistry.createRegistry(55555);
