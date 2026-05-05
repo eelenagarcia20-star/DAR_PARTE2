@@ -51,7 +51,7 @@ public class RMI_juego_cliente {
 
     private void conectarServidor() {
         try {
-            Registry reg = LocateRegistry.getRegistry("192.168.50.10", 55555);
+            Registry reg = LocateRegistry.getRegistry("192.168.50.10", 1099);
             stub = (JuegoInterfaz) reg.lookup("Juego");
 
             lblEstado.setText("Conectado. Pulsa START.");
